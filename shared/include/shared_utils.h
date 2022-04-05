@@ -30,13 +30,19 @@ typedef struct {
 } t_paquete;
 
 typedef enum {
-    INT = 1,
-    CHAR_PTR = 2,
-    UINT32 = 3,
-    BOOL = 4,
-    LIST = 5,
-	U_INT = 6
+    INT,
+    CHAR_PTR,
+    UINT32,
+    BOOL,
+    LIST,
+	U_INT,
+    STRUCT
 }t_type;
+
+typedef struct{
+    int size;
+    t_type tipos[];
+}t_custom_struct;
 
 
 //FUNCIONES

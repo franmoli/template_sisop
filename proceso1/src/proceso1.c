@@ -4,7 +4,7 @@ typedef struct {
     uint32_t first;
     char *second;
     int third;
-} test_t;
+} test_t; 
 
 typedef enum {
 	INT2 = sizeof(int),

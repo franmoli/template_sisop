@@ -130,6 +130,21 @@ t_paquete* recibir_paquete(int socket_cliente) {
 	return paquete;
 }
 
+void serializar_single (void **stream, void *elem, int *stream_size, int added_size, int *offset){
+
+    //Expandir espacio en buffer
+    *stream_size = *stream_size + added_size;
+    *stream = realloc(*stream, *stream_size);
+    printf("Added size %d\n", added_size);
+    //copiar contenido a buffer
+    memcpy(*stream + *offset, elem, added_size);
+    
+    //correr offset
+    *offset += added_size;
+
+    return;
+}
+
 t_paquete * serializar (int arg_count, ...){
 
     //Declaraciones de variables
@@ -145,10 +160,12 @@ t_paquete * serializar (int arg_count, ...){
     uint32_t param_ui = 0;
     bool param_b = false;
     t_list *param_l = NULL; 
-    t_paquete *paquete_aux = malloc(sizeof(t_paquete));
-    paquete_aux->buffer = malloc(sizeof(t_buffer));
     t_type tipo_de_lista = INT;
     void *list_elem = NULL;
+    void *param_struct = NULL;
+    t_custom_struct struct_info = {0, {0}};
+    t_paquete *paquete_aux = malloc(sizeof(t_paquete));
+    paquete_aux->buffer = malloc(sizeof(t_buffer));
 
     va_list valist;
     va_start(valist, arg_count);
@@ -216,7 +233,15 @@ t_paquete * serializar (int arg_count, ...){
                 serializar_single(&stream, &param_un_i, &size, added_size, &offset);
 
                 break;
-        }
+            case STRUCT:
+                param_struct = va_arg(valist, void *);
+                struct_
+                 
+
+                serializar_single(&stream, &param_un_i, &size, added_size, &offset);
+                break;
+            
+        }   
     }
     
     //Se libera la lista de argumentos
@@ -231,21 +256,6 @@ t_paquete * serializar (int arg_count, ...){
     paquete->codigo_operacion = CODIGO_INDEFINIDO;
     printf("Paquete size %d\n", size);
     return paquete;
-}
-
-void serializar_single (void **stream, void *elem, int *stream_size, int added_size, int *offset){
-
-    //Expandir espacio en buffer
-    *stream_size = *stream_size + added_size;
-    *stream = realloc(*stream, *stream_size);
-    printf("Added size %d\n", added_size);
-    //copiar contenido a buffer
-    memcpy(*stream + *offset, elem, added_size);
-    
-    //correr offset
-    *offset += added_size;
-
-    return;
 }
 
 void deserializar_single (void *stream, void *elem, int size, int *offset){    
