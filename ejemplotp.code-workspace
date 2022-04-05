@@ -15,7 +15,14 @@
 	],
 	"settings": {
 		"files.associations": {
-			"proceso1.h": "c"
+			"proceso1.h": "c",
+			"shared_utils.h": "c",
+			"log.h": "c",
+			"stdbool.h": "c",
+			"types.h": "c",
+			"stdio.h": "c",
+			"list.h": "c",
+			"otro_test.h": "c"
 		}
 	}
 }
