@@ -5,4 +5,7 @@
 #include <stdbool.h>
 #include "shared_utils.h"
 #include "tests.h"
+
+int testing_other_shit();
+
 #endif
