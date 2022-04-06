@@ -2,14 +2,19 @@
 
 typedef struct {
     uint32_t first;
-    char *second;
-    int third;
+    char second;
+    char *third;
 } test_t; 
 
 typedef enum {
 	INT2 = sizeof(int),
     CHAR2 = sizeof(char) 
 } test2;
+
+union test_union_types{
+    int int_t;
+    char *char_ptr;
+};
 
 void probandaso(int size, int arr[]){
     for (int i = 0; i < size; i++)
@@ -27,32 +32,27 @@ int main(int argc, char ** argv){
         return run_tests();
 
     
-    t_list *test_list = list_create(); 
-    t_list *test_list2 = list_create(); 
-    int *test_1 = malloc(sizeof(int));
-    int *test_2 = malloc(sizeof(int));
-    int *test_3 = malloc(sizeof(int));
-    int *test_4 = malloc(sizeof(int));
-    *test_1 = 1; 
-    *test_2 = 2; 
-    *test_3 = 3; 
-    *test_4 = 4; 
-
-    list_add(test_list, test_1);
-    list_add(test_list, test_2);
-    list_add(test_list, test_3);
-    list_add(test_list, test_4);
-
+    // test_t testeando = {1, 'c', "algo"};
+    // printf("Testeando %d | %c | %s\n", testeando.first, testeando.second, testeando.third);
+    // t_custom_struct custom ;
+    // custom.size = 3;
+    // custom.tipos = calloc(3, sizeof(t_type));
+    // custom.tipos[0] = INT;
+    // custom.tipos[1] = INT;
+    // custom.tipos[2] = CHAR_PTR;
+    // t_paquete *test_package = serializar(3, STRUCT, &testeando, custom);
     
-    t_paquete *test_paquete = serializar(3, LIST, INT, test_list);
-    
-    deserializar(test_paquete, 3, LIST, INT, test_list2);
-    list_size(test_list2);
-    int *deserializado_1 = list_get(test_list2, 0);
-    int *deserializado_2 = list_get(test_list2, 1);
-    int *deserializado_3 = list_get(test_list2, 2);
-    int *deserializado_4 = list_get(test_list2, 3);
+    // int test =0;
+    // char *string_desrlzd = malloc(sizeof(char)*5);
 
-    printf("deser : %d | %d | %d | %d", *deserializado_1, *deserializado_2, *deserializado_3, *deserializado_4);
+    // memcpy(&test, test_package->buffer->stream + sizeof(int), sizeof(char));
+    // memcpy(string_desrlzd, test_package->buffer->stream + sizeof(int) + sizeof(char), sizeof(char) * 5);
+    // printf("deserializd %c\n", test);
+    // printf("deserializd %s\n", string_desrlzd);
 
+
+
+
+    return 0;
 }
+
