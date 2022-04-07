@@ -134,8 +134,8 @@ void serializar_single (void **stream, void *elem, int *stream_size, int added_s
 
     //Expandir espacio en buffer
     *stream_size = *stream_size + added_size;
+    printf("stream size %d\n", *stream_size);
     *stream = realloc(*stream, *stream_size);
-    printf("Added size %d\n", added_size);
     //copiar contenido a buffer
     memcpy(*stream + *offset, elem, added_size);
     
@@ -149,97 +149,61 @@ t_paquete * serializar (int arg_count, ...){
 
     //Declaraciones de variables
     void *stream = NULL;
-    int size = 0;
-    int offset = 0;
-    int added_size = 0;
+    int stream_size = 0;
 
-    //Declaracion de parametros posibles
-    int param_i = 0;
-    unsigned int param_un_i = 0; 
-    char *param_s = NULL;
-    uint32_t param_ui = 0;
-    bool param_b = false;
-    t_list *param_l = NULL; 
-    t_type tipo_de_lista = INT;
-    void *list_elem = NULL;
-    void *param_struct = NULL;
-    t_custom_struct struct_info = {0, {0}};
-    t_paquete *paquete_aux = malloc(sizeof(t_paquete));
-    paquete_aux->buffer = malloc(sizeof(t_buffer));
+    
+    t_type list_type;
+    t_list *lista;
 
+    //Inicializacion de lista de argumentos
     va_list valist;
     va_start(valist, arg_count);
-    int lista_size = 0;
 
     for (int i = 0; i < arg_count; i += 2) {
         //Primer parametro es el tipo de dato que se quiere serializar
         t_type tipo = va_arg(valist, t_type);
-
         switch(tipo){
             case INT:
-                param_i = va_arg(valist, int);
-                added_size = sizeof(int);
-
-                serializar_single(&stream, &param_i, &size, added_size, &offset);
-
-                break;
+                serializar_int(va_arg(valist, int), &stream, &stream_size);
+            break;
+            case CHAR:
+                serializar_char(va_arg(valist, int), &stream, &stream_size);
+            break;
             case CHAR_PTR:       
-                param_s = va_arg(valist, char*);
-                int string_length = strlen(param_s) +1;
-                added_size = sizeof(char) * sizeof(char)*string_length;
-
-                serializar_single(&stream, &string_length, &size, sizeof(int), &offset);   
-
-                serializar_single(&stream, param_s, &size, added_size, &offset);                
-
-                break;
+                serializar_char_ptr(va_arg(valist, char*), &stream, &stream_size);
+            break;
             case UINT32:
-                param_ui = va_arg(valist, uint32_t);
-                added_size = sizeof(uint32_t);
-
-                serializar_single(&stream, &param_ui, &size, added_size, &offset);
-
-                break;
+                serializar_uint32(va_arg(valist, uint32_t), &stream, &stream_size);
+            break;
             case BOOL:
-                param_b = va_arg(valist, int);
-                added_size = sizeof(bool);
-
-                serializar_single(&stream, &param_b, &size, added_size, &offset);
-
-                break;
+                serializar_bool(va_arg(valist, int), &stream, &stream_size);
+            break;
             case LIST:
-                tipo_de_lista = va_arg(valist, t_type); 
-                param_l = va_arg(valist, t_list*);
-                //Se trae el tipo de lista y se incrementa i por el va_arg extra
+                list_type = va_arg(valist, t_type);
+                printf("List type %d\n", list_type);
+                lista = va_arg(valist, t_list*);
+                serializar_lista(list_type, lista, &stream, &stream_size);
+                //  se incrementa i por el va_arg extra
                 i++;
-                lista_size = list_size(param_l);
-                serializar_single(&stream,&lista_size,&size ,sizeof(int),  &offset);
+                // tipo_de_lista = va_arg(valist, t_type); 
+                // param_l = va_arg(valist, t_list*);
+                // lista_size = list_size(param_l);
+                // serializar_single(&stream,&lista_size,&size ,sizeof(int),  &offset);
                 
-                for(int j = 0; j < list_size(param_l); j++){
+                // for(int j = 0; j < list_size(param_l); j++){
                     
-                    //Traigo un elemento de la lista y lo serializo recursivamente
-                    list_elem = list_get(param_l, j);
-                    paquete_aux = serializar(2, tipo_de_lista, list_elem);
-                    added_size = paquete_aux->buffer->size;
+                //     //Traigo un elemento de la lista y lo serializo recursivamente
+                //     list_elem = list_get(param_l, j);
+                //     paquete_aux = serializar(2, tipo_de_lista, list_elem);
+                //     added_size = paquete_aux->buffer->size;
 
-                    serializar_single(&stream, paquete_aux->buffer->stream, &size, added_size, &offset);
+                //     serializar_single(&stream, paquete_aux->buffer->stream, &size, added_size, &offset);
                 
-                }
-                break;
-            case U_INT:
-                param_un_i = va_arg(valist, unsigned int);
-                added_size = sizeof(unsigned int);
-
-                serializar_single(&stream, &param_un_i, &size, added_size, &offset);
-
-                break;
-            case STRUCT:
-                param_struct = va_arg(valist, void *);
-                struct_
-                 
-
-                serializar_single(&stream, &param_un_i, &size, added_size, &offset);
-                break;
+                // }
+            break;
+            case DEMO_STRUCT:
+                serializar_demo_struct(va_arg(valist, demo_struct *), &stream, &stream_size);
+            break;
             
         }   
     }
@@ -251,13 +215,133 @@ t_paquete * serializar (int arg_count, ...){
     t_paquete *paquete = malloc(sizeof(t_paquete));
     paquete->buffer = malloc(sizeof(t_buffer));
 
-    paquete->buffer->size = size;
+    paquete->buffer->size = stream_size;
     paquete->buffer->stream = stream;
     paquete->codigo_operacion = CODIGO_INDEFINIDO;
-    printf("Paquete size %d\n", size);
+
     return paquete;
 }
 
+
+void serializar_int(int dato, void **stream, int *stream_size){
+
+    //Expandir espacio en buffer
+    int added_size = sizeof(int);
+    *stream = realloc(*stream, *stream_size + added_size);
+
+    //Se copia a memoria a partir del ultimo tamaño que tenía antes de ser reallocado
+    memcpy(*stream + *stream_size, &dato, added_size);
+
+    //Actualizar offset
+    *stream_size += added_size;
+
+    printf("Serializd %d\n", dato);
+    return;
+}
+void serializar_char(int dato, void **stream, int *stream_size){
+    //Expandir espacio en buffer
+    int added_size = sizeof(char);
+    *stream = realloc(*stream, *stream_size + added_size);
+
+    //Se copia a memoria a partir del ultimo tamaño que tenía antes de ser reallocado
+    memcpy(*stream + *stream_size, &dato, added_size);
+
+    //Actualizar offset
+    *stream_size += added_size;
+    printf("Serialized char  %c\n", dato);
+
+    return;
+}
+void serializar_char_ptr(char *dato, void **stream, int *stream_size){
+
+    int string_length = strlen(dato) + 1;
+
+    //Expandir espacio en buffer
+    int strlen_added_size = sizeof(int);
+    int string_added_size = sizeof(char) * string_length;
+    *stream = realloc(*stream, *stream_size + string_added_size + strlen_added_size);
+
+    //Se copia a memoria a partir del ultimo tamaño que tenía antes de ser reallocado | primero un int del tamaño del string | despues el string en si
+    memcpy(*stream + *stream_size, &string_length, strlen_added_size);
+    memcpy(*stream + *stream_size + strlen_added_size, dato, string_added_size);
+    
+    //Actualizar offset
+    *stream_size += string_added_size + strlen_added_size;
+
+    printf("Serializd %s\n", dato);
+
+    return;
+}
+void serializar_uint32(uint32_t dato, void **stream, int *stream_size){
+
+    //Expandir espacio en buffer
+    int added_size = sizeof(uint32_t);
+    *stream = realloc(*stream, *stream_size + added_size);
+
+    //Se copia a memoria a partir del ultimo tamaño que tenía antes de ser reallocado
+    memcpy(*stream + *stream_size, &dato, added_size);
+
+    //Actualizar offset
+    *stream_size += added_size;
+    printf("Serialized uint32  %d\n", dato);
+
+    return;
+}
+void serializar_bool(int dato, void **stream, int *stream_size){
+
+    //Expandir espacio en buffer
+    int added_size = sizeof(bool);
+    *stream = realloc(*stream, *stream_size + added_size);
+
+    //Se copia a memoria a partir del ultimo tamaño que tenía antes de ser reallocado
+    memcpy(*stream + *stream_size, &dato, added_size);
+
+    //Actualizar offset
+    *stream_size += added_size;
+    return;
+}
+void serializar_void_ptr(void *dato, void **stream, int *stream_size, int dato_size){
+    //Expandir espacio en buffer
+    *stream = realloc(*stream, *stream_size + dato_size);
+
+    //Se copia a memoria a partir del ultimo tamaño que tenía antes de ser reallocado
+    memcpy(*stream + *stream_size, dato, dato_size);
+
+    //Actualizar offset
+    *stream_size += dato_size;
+    return;
+}
+void serializar_lista(t_type tipo_de_lista, t_list *lista, void **stream, int *stream_size){
+    //Paquetes auxiliares para serializar listas
+    t_paquete *paquete_aux = malloc(sizeof(t_paquete));
+    paquete_aux->buffer = malloc(sizeof(t_buffer));
+    void *list_elem = NULL;
+
+    printf("Type %d | PTR %p \n", tipo_de_lista, lista);
+
+    //Pongo primero el tamaño de la lista
+    serializar_int(list_size(lista), stream, stream_size);
+    //Despues el tipo de la lista
+    serializar_int(tipo_de_lista, stream, stream_size);
+
+    //Despues el contenido de la lista
+    for(int i = 0; i < list_size(lista); i++){
+                    
+        //Traigo un elemento de la lista y lo serializo a un paquete auxiliar
+        list_elem = list_get(lista, i);
+        paquete_aux = serializar(2, tipo_de_lista, list_elem);
+
+        //El stream con el dato serializado lo paso como un void * y lo agrego al stream
+        serializar_void_ptr(paquete_aux->buffer->stream, stream, stream_size, paquete_aux->buffer->size);
+    }
+}
+void serializar_demo_struct(demo_struct *dato, void **stream, int *stream_size){
+    printf("Serializando struct %p\n", dato);
+    serializar_int(dato->size, stream, stream_size);
+    serializar_char_ptr(dato->string, stream, stream_size);
+    serializar_int(dato->otro_int, stream, stream_size);
+    return;
+}
 void deserializar_single (void *stream, void *elem, int size, int *offset){    
 
     //copiar contenido a variable
@@ -271,19 +355,25 @@ void deserializar_single (void *stream, void *elem, int size, int *offset){
 
 int deserializar(t_paquete *paquete, int arg_count, ...){
 
-    int size = 0;
-    void *param = NULL;
+    //Datos recibidos
     void *stream = paquete->buffer->stream;
     int offset = 0;
-    char **param_char = NULL;
+
+    //Tipos de datos posibles
+    int *param_int = NULL;
+    char *param_char = NULL;
+    char **param_char_ptr = NULL;
+    uint32_t *param_uint32 = NULL;
+    bool *param_bool = NULL;
+    demo_struct **param_demo_struct = NULL;
+    t_list **param_list = NULL;
+
+
+    //Inicializacion de la lista de argumentos
     va_list valist;
     va_start(valist, arg_count);
     
-    t_paquete *paquete_aux= NULL;
 
-    t_list *param_l = NULL; 
-    t_type tipo_de_lista = INT;
-    void *list_elem = NULL;
     
     
     for (int i = 0; i < arg_count; i += 2){
@@ -291,60 +381,132 @@ int deserializar(t_paquete *paquete, int arg_count, ...){
         t_type tipo = va_arg(valist, t_type);
         switch(tipo){
             case INT:
-                param = va_arg(valist, void*);
-                size = sizeof(int);
-                deserializar_single(stream, param, size, &offset);
-
-                break;
+                param_int = va_arg(valist, int*);
+                *param_int = deserializar_int(stream, &offset);
+            break;  
+            case CHAR:
+                param_char = va_arg(valist, char*);
+                *param_char = deserializar_char(stream, &offset);
+            break;
             case CHAR_PTR:  
-                param_char = va_arg(valist, char**);
-                //Primero traigo el tamanio del string
-                size = sizeof(int);
-                deserializar_single(stream, &size, size, &offset);
-                //Con el tamanio del string asigno memoria y traigo variable
-                *param_char = realloc(*param_char, size);
-                deserializar_single(stream, *param_char, size, &offset);              
-
-                break;
+                param_char_ptr = va_arg(valist, char**);
+                *param_char_ptr = deserializar_char_ptr(stream, &offset);
+            break;
             case UINT32:
-                param = va_arg(valist, void*);
-                size = sizeof(uint32_t);
-                deserializar_single(stream, param, size, &offset);
-
-                break;
+                param_uint32 = va_arg(valist, uint32_t*);
+                *param_uint32 = deserializar_uint32(stream, &offset);
+            break;
             case BOOL:
-                param = va_arg(valist, void*);
-                size = sizeof(bool);
-                deserializar_single(stream, param, size, &offset);
-
-                break;
-            case U_INT:
-                param = va_arg(valist, void*);
-                size = sizeof(unsigned int);
-                deserializar_single(stream, param, size, &offset);
-
-                break;
+                param_bool = va_arg(valist, bool*);
+                *param_bool = deserializar_bool(stream, &offset);
+            break;
             case LIST:
-            
-                tipo_de_lista = va_arg(valist, t_type); 
-                param_l = va_arg(valist, t_list*);
-                //Se trae el tipo de lista y se incrementa i por el va_arg extra
-                i++;
-                int tamanio_lista;
-                deserializar_single(stream, &tamanio_lista, sizeof(int), &offset);
-                printf("Tamaño de la lista recibida %d", tamanio_lista);
-                for(int j = 0; j < tamanio_lista; j++){
-                printf("pass\n");
-                    paquete_aux = malloc(sizeof(t_paquete));
-                    paquete_aux->buffer = malloc(sizeof(t_buffer));
-                    paquete_aux->buffer->stream = stream + offset;
-                    list_elem = NULL;
-                    //Traigo un elemento de la lista y lo serializo recursivamente
-                    offset += deserializar(paquete_aux,2,tipo_de_lista,&list_elem);
-                    list_add(param_l,list_elem);
-                }
+                param_list = va_arg(valist, t_list**);
+                *param_list = deserializar_lista(stream, &offset);
+                // tipo_de_lista = va_arg(valist, t_type); 
+                // param_l = va_arg(valist, t_list*);
+                // //Se trae el tipo de lista y se incrementa i por el va_arg extra
+                // i++;
+                // int tamanio_lista;
+                // deserializar_single(stream, &tamanio_lista, sizeof(int), &offset);
+                // printf("Tamaño de la lista recibida %d", tamanio_lista);
+                // for(int j = 0; j < tamanio_lista; j++){
+                //     printf("pass\n");
+                //     paquete_aux = malloc(sizeof(t_paquete));
+                //     paquete_aux->buffer = malloc(sizeof(t_buffer));
+                //     paquete_aux->buffer->stream = stream + offset;
+                //     list_elem = NULL;
+                //     //Traigo un elemento de la lista y lo serializo recursivamente
+                //     offset += deserializar(paquete_aux,2,tipo_de_lista,&list_elem);
+                //     list_add(param_l,list_elem);
+                // } para deserializar una lista, primero traer el tamaño y tipo despues andar deserializando dato a dato recursivo
                 break;
+            case DEMO_STRUCT:
+                param_demo_struct = va_arg(valist, demo_struct **);
+                *param_demo_struct = deserializar_demo_struct(stream, &offset);
+            break;
         }
     }
+    printf("Offset %d\n", offset);
     return offset;
+}
+int deserializar_int(void *stream, int *offset){
+    int dato = 0;
+
+    memcpy(&dato, stream + *offset, sizeof(int));
+
+    *offset += sizeof(int);
+
+    return dato;
+}
+char deserializar_char(void *stream, int *offset){
+    char dato = 0;
+
+    memcpy(&dato, stream + *offset, sizeof(char));
+
+    *offset += sizeof(char);
+
+
+    return dato;
+}
+char *deserializar_char_ptr(void *stream, int *offset){
+    char *dato = NULL;
+    int stringlen = 0;
+
+    //Copiar tamaño del string
+    memcpy(&stringlen, stream + *offset, sizeof(int));
+    //allocar memoria y copiar string
+    dato = malloc(sizeof(char) * stringlen);
+    memcpy(dato, stream + *offset + sizeof(int), sizeof(char) * stringlen);
+
+    *offset += sizeof(char) * stringlen + sizeof(int);
+
+    return dato;
+}
+uint32_t deserializar_uint32(void *stream, int *offset){
+    uint32_t dato = 0;
+
+    memcpy(&dato, stream + *offset, sizeof(uint32_t));
+
+    *offset += sizeof(uint32_t);
+
+    return dato;
+}
+bool deserializar_bool(void *stream, int *offset){
+    int dato = 0;
+
+    memcpy(&dato, stream + *offset, sizeof(bool));
+
+    *offset += sizeof(bool);
+
+    return dato;
+}
+t_list *deserializar_lista(void *stream, int *offset){
+    printf("Deserializando lista \n \n");
+
+    int list_size = deserializar_int(stream, offset);
+    t_type list_type = deserializar_int(stream, offset);
+    t_list *lista = list_create();
+    void *dato = NULL;
+    t_paquete *paquete_aux = malloc(sizeof(t_paquete));
+    paquete_aux->buffer = malloc(sizeof(t_buffer));
+    
+    for(int i = 0; i < list_size; i++){
+        paquete_aux->buffer->stream = stream + *offset;
+        //Traigo un elemento de la lista y lo serializo recursivamente
+        *offset += deserializar(paquete_aux,2,list_type,&dato);
+        list_add(lista,dato);
+        dato = NULL;
+    }
+    
+    return lista;
+}
+demo_struct *deserializar_demo_struct(void *stream, int *offset){
+    printf("Deserializando struct\n");
+    demo_struct *struct_deserializado = malloc(sizeof(demo_struct));
+    struct_deserializado->size = deserializar_int(stream, offset);
+    struct_deserializado->string = deserializar_char_ptr(stream, offset);
+    struct_deserializado->otro_int = deserializar_int(stream, offset);
+    printf("Size %d | string %s | other int %d\n", struct_deserializado->size, struct_deserializado->string, struct_deserializado->otro_int);
+    return struct_deserializado; 
 }
