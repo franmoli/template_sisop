@@ -31,26 +31,8 @@ int main(int argc, char ** argv){
     if(argc > 1 && strcmp(argv[1],"-test")==0)
         return run_tests();
 
-    
-    // test_t testeando = {1, 'c', "algo"};
-    // printf("Testeando %d | %c | %s\n", testeando.first, testeando.second, testeando.third);
-    // t_custom_struct custom ;
-    // custom.size = 3;
-    // custom.tipos = calloc(3, sizeof(t_type));
-    // custom.tipos[0] = INT;
-    // custom.tipos[1] = INT;
-    // custom.tipos[2] = CHAR_PTR;
-    // t_paquete *test_package = serializar(3, STRUCT, &testeando, custom);
-    
-    // int test =0;
-    // char *string_desrlzd = malloc(sizeof(char)*5);
 
-    // memcpy(&test, test_package->buffer->stream + sizeof(int), sizeof(char));
-    // memcpy(string_desrlzd, test_package->buffer->stream + sizeof(int) + sizeof(char), sizeof(char) * 5);
-    // printf("deserializd %c\n", test);
-    // printf("deserializd %s\n", string_desrlzd);
     char *char_test = "Testing";
-
     t_paquete *paquete_test = serializar(10, INT, 3, CHAR, 'c', CHAR_PTR, char_test, UINT32, 15, BOOL, 1);
 
     
@@ -62,8 +44,6 @@ int main(int argc, char ** argv){
     deserializar(paquete_test, 10, INT, &return_int, CHAR, &return_char, CHAR_PTR, &return_char_ptr, UINT32, &return_uint32, BOOL, &return_bool);
 
     printf("Returned | %d | %c | %s | %d | %d \n", return_int, return_char, return_char_ptr, return_uint32, return_bool);
-
-
 
     // -----------------
     demo_struct *demo_struct_first = malloc(sizeof(demo_struct));

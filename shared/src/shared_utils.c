@@ -130,21 +130,9 @@ t_paquete* recibir_paquete(int socket_cliente) {
 	return paquete;
 }
 
-void serializar_single (void **stream, void *elem, int *stream_size, int added_size, int *offset){
+// SERIALIZACIONES
 
-    //Expandir espacio en buffer
-    *stream_size = *stream_size + added_size;
-    printf("stream size %d\n", *stream_size);
-    *stream = realloc(*stream, *stream_size);
-    //copiar contenido a buffer
-    memcpy(*stream + *offset, elem, added_size);
-    
-    //correr offset
-    *offset += added_size;
-
-    return;
-}
-
+/* Funcion general de serializar acá incluir nuevos structs*/
 t_paquete * serializar (int arg_count, ...){
 
     //Declaraciones de variables
@@ -221,7 +209,6 @@ t_paquete * serializar (int arg_count, ...){
 
     return paquete;
 }
-
 
 void serializar_int(int dato, void **stream, int *stream_size){
 
@@ -342,17 +329,9 @@ void serializar_demo_struct(demo_struct *dato, void **stream, int *stream_size){
     serializar_int(dato->otro_int, stream, stream_size);
     return;
 }
-void deserializar_single (void *stream, void *elem, int size, int *offset){    
 
-    //copiar contenido a variable
-    memcpy(elem, stream + *offset, size);
-    
-    //correr offset
-    *offset += size;
-
-    return;
-}
-
+// DESERIALIZACIONES 
+/* Funcion general de dessserializar, aca incluir los nuevos structs*/
 int deserializar(t_paquete *paquete, int arg_count, ...){
 
     //Datos recibidos
@@ -372,8 +351,6 @@ int deserializar(t_paquete *paquete, int arg_count, ...){
     //Inicializacion de la lista de argumentos
     va_list valist;
     va_start(valist, arg_count);
-    
-
     
     
     for (int i = 0; i < arg_count; i += 2){
@@ -403,34 +380,18 @@ int deserializar(t_paquete *paquete, int arg_count, ...){
             case LIST:
                 param_list = va_arg(valist, t_list**);
                 *param_list = deserializar_lista(stream, &offset);
-                // tipo_de_lista = va_arg(valist, t_type); 
-                // param_l = va_arg(valist, t_list*);
-                // //Se trae el tipo de lista y se incrementa i por el va_arg extra
-                // i++;
-                // int tamanio_lista;
-                // deserializar_single(stream, &tamanio_lista, sizeof(int), &offset);
-                // printf("Tamaño de la lista recibida %d", tamanio_lista);
-                // for(int j = 0; j < tamanio_lista; j++){
-                //     printf("pass\n");
-                //     paquete_aux = malloc(sizeof(t_paquete));
-                //     paquete_aux->buffer = malloc(sizeof(t_buffer));
-                //     paquete_aux->buffer->stream = stream + offset;
-                //     list_elem = NULL;
-                //     //Traigo un elemento de la lista y lo serializo recursivamente
-                //     offset += deserializar(paquete_aux,2,tipo_de_lista,&list_elem);
-                //     list_add(param_l,list_elem);
-                // } para deserializar una lista, primero traer el tamaño y tipo despues andar deserializando dato a dato recursivo
-                break;
+            break;
             case DEMO_STRUCT:
                 param_demo_struct = va_arg(valist, demo_struct **);
                 *param_demo_struct = deserializar_demo_struct(stream, &offset);
             break;
         }
     }
-    printf("Offset %d\n", offset);
+
     return offset;
 }
 int deserializar_int(void *stream, int *offset){
+    
     int dato = 0;
 
     memcpy(&dato, stream + *offset, sizeof(int));
@@ -440,21 +401,23 @@ int deserializar_int(void *stream, int *offset){
     return dato;
 }
 char deserializar_char(void *stream, int *offset){
+    
     char dato = 0;
 
     memcpy(&dato, stream + *offset, sizeof(char));
 
     *offset += sizeof(char);
 
-
     return dato;
 }
 char *deserializar_char_ptr(void *stream, int *offset){
+    
     char *dato = NULL;
     int stringlen = 0;
 
     //Copiar tamaño del string
     memcpy(&stringlen, stream + *offset, sizeof(int));
+
     //allocar memoria y copiar string
     dato = malloc(sizeof(char) * stringlen);
     memcpy(dato, stream + *offset + sizeof(int), sizeof(char) * stringlen);
@@ -464,6 +427,7 @@ char *deserializar_char_ptr(void *stream, int *offset){
     return dato;
 }
 uint32_t deserializar_uint32(void *stream, int *offset){
+    
     uint32_t dato = 0;
 
     memcpy(&dato, stream + *offset, sizeof(uint32_t));
@@ -473,6 +437,7 @@ uint32_t deserializar_uint32(void *stream, int *offset){
     return dato;
 }
 bool deserializar_bool(void *stream, int *offset){
+    
     int dato = 0;
 
     memcpy(&dato, stream + *offset, sizeof(bool));
@@ -482,10 +447,10 @@ bool deserializar_bool(void *stream, int *offset){
     return dato;
 }
 t_list *deserializar_lista(void *stream, int *offset){
-    printf("Deserializando lista \n \n");
-
+    
     int list_size = deserializar_int(stream, offset);
     t_type list_type = deserializar_int(stream, offset);
+
     t_list *lista = list_create();
     void *dato = NULL;
     t_paquete *paquete_aux = malloc(sizeof(t_paquete));
@@ -502,11 +467,11 @@ t_list *deserializar_lista(void *stream, int *offset){
     return lista;
 }
 demo_struct *deserializar_demo_struct(void *stream, int *offset){
-    printf("Deserializando struct\n");
+    
     demo_struct *struct_deserializado = malloc(sizeof(demo_struct));
     struct_deserializado->size = deserializar_int(stream, offset);
     struct_deserializado->string = deserializar_char_ptr(stream, offset);
     struct_deserializado->otro_int = deserializar_int(stream, offset);
-    printf("Size %d | string %s | other int %d\n", struct_deserializado->size, struct_deserializado->string, struct_deserializado->otro_int);
+
     return struct_deserializado; 
 }

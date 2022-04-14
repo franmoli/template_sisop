@@ -65,34 +65,37 @@ int esperar_cliente(int socket_servidor, t_log *logger);
 void* serializar_paquete(t_paquete *paquete, int *bytes);
 void enviar_paquete(t_paquete *paquete, int socket_cliente);
 t_paquete *recibir_paquete(int socket_cliente);
-void serializar_single (void **stream, void *elem, int *stream_size, int elem_size, int *offset);
-//Utilizacion: deserializar(paquete, TIPO DE DATO(segun el enum t_type), &DATO BUSCADO) para strings se pasa con & ej: char *string_objetivo; deserializar(paquete, CHAR_PTR, &string_objetivo)
-int deserializar(t_paquete *paquete, int arg_count, ...);
-void deserializar_single (void *stream, void *elem, int size, int *offset);
-int devolver_tamanio (t_type tipo);
 
 
 //SERIALIZACIONES
 //Utilizacion: serializar(cant de argumentos , datos a serializar)
-//             datos a serializar = (TIPO DE DATO (segun enum t_type) , DATO .....)
-//             para enviar una lista será = (LIST, tipo de datos que contiene la lista , PUNTERO A LA LISTA) / las listas ponerlas siempre al final para usar el deserializar
+//             datos a serializar = (TIPO DE DATO, DATO .....)
+//             Para mandar lista(LIST, Tipo de la lista , lista) 
+//             Para struct hacer las funciones de serializar, deserializar y agregar al enum, como el struct demo 
 t_paquete * serializar (int arg_count, ...);
+
+//Serializaciones de tipos basicos
 void serializar_int(int dato, void **stream, int *stream_size);
 void serializar_char(int dato, void **stream, int *stream_size);
 void serializar_char_ptr(char *dato, void **stream, int *stream_size);
 void serializar_bool(int dato, void **stream, int *stream_size);
 void serializar_uint32(uint32_t dato, void **stream, int *stream_size);
-void serializar_lista(t_type tipo_de_lista, t_list *lista, void **stream, int *stream_size);
 void serializar_void_ptr(void *dato, void **stream, int *stream_size, int dato_size);
+
 void serializar_demo_struct(demo_struct *dato, void **stream, int *stream_size);
+void serializar_lista(t_type tipo_de_lista, t_list *lista, void **stream, int *stream_size);
 
 
 //DESERIALIZACIONES
+//Utilizacion: deserializar(paquete, TIPO DE DATO, &DATO)
+int deserializar(t_paquete *paquete, int arg_count, ...);
+//Deserializaciones de tipos basicos
 int deserializar_int(void *stream, int *offset);
 char deserializar_char(void *stream, int *offset);
 char *deserializar_char_ptr(void *stream, int *offset);
 uint32_t deserializar_uint32(void *stream, int *offset);
 bool deserializar_bool(void *stream, int *offset);
+
 demo_struct *deserializar_demo_struct(void *stream, int *offset);
 t_list *deserializar_lista(void *stream, int *offset);
 
